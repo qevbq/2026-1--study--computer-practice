@@ -1,6 +1,6 @@
 {
   "name": "computer-practice",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Компьютерный практикум по статистическому анализу данных",
   "main": "index.js",
   "repository": "git@github.com:qevbq/2026-1--study--computer-practice.git",
