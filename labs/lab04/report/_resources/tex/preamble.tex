@@ -13,3 +13,5 @@
   %% TinyTeX
   \usepackage{libertine}
 }
+%% plex-otf под XeLaTeX не задаёт mathrm, и \cos / \mathrm ломают сборку
+\setmathfont[mathrm=sym,mathbf=sym,version=normal]{IBMPlexMath-Regular.otf}
