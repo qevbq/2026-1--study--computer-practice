@@ -1,0 +1,302 @@
+using Statistics
+using LinearAlgebra
+using BenchmarkTools
+using Random
+
+Random.seed!(42)
+
+function showval(title, value)
+    println(title)
+    show(stdout, MIME"text/plain"(), value)
+    println("\n")
+end
+
+a = rand(1:20, (4, 3))
+showval("Матрица a:", a)
+showval("Сумма всех элементов:", sum(a))
+showval("Сумма по столбцам:", sum(a, dims=1))
+showval("Сумма по строкам:", sum(a, dims=2))
+showval("Произведение всех элементов:", prod(a))
+showval("Произведение по столбцам:", prod(a, dims=1))
+showval("Произведение по строкам:", prod(a, dims=2))
+showval("Среднее:", mean(a))
+showval("Среднее по столбцам:", mean(a, dims=1))
+showval("Среднее по строкам:", mean(a, dims=2))
+
+b = rand(1:20, (4, 4))
+showval("Матрица b:", b)
+showval("Транспонирование:", transpose(b))
+showval("След:", tr(b))
+showval("Диагональ:", diag(b))
+showval("Ранг:", rank(b))
+showval("Обратная матрица:", inv(b))
+showval("Определитель:", det(b))
+showval("Псевдообратная к прямоугольной a:", pinv(a))
+
+X = [2, 4, -5]
+showval("Евклидова норма X:", norm(X))
+showval("1-норма X:", norm(X, 1))
+
+Y = [1, -1, 3]
+showval("Расстояние ||X - Y||:", norm(X - Y))
+showval("Проверка через определение:", sqrt(sum((X - Y) .^ 2)))
+
+cos_theta = (transpose(X) * Y) / (norm(X) * norm(Y))
+showval("Косинус угла:", cos_theta)
+showval("Угол, рад:", acos(cos_theta))
+
+d = [5 -4 2; -1 2 3; -2 1 0]
+showval("Матрица d:", d)
+showval("Спектральная норма:", opnorm(d))
+showval("1-норма матрицы:", opnorm(d, 1))
+showval("Поворот на 180 градусов:", rot180(d))
+showval("Переворот строк:", reverse(d, dims=1))
+showval("Переворот столбцов:", reverse(d, dims=2))
+
+A = rand(1:10, (2, 3))
+B = rand(1:10, (3, 4))
+showval("A (2×3):", A)
+showval("B (3×4):", B)
+showval("A * B:", A * B)
+showval("Единичная матрица 3×3:", Matrix{Int}(I, 3, 3))
+
+X = [2, 4, -5]
+Y = [1, -1, 3]
+showval("dot(X, Y):", dot(X, Y))
+showval("X'Y:", X'Y)
+
+A = rand(3, 3)
+x = fill(1.0, 3)
+b = A * x
+showval("Решение A\\b:", A \ b)
+
+Alu = lu(A)
+showval("LU-разложение:", Alu)
+showval("Матрица перестановок P:", Alu.P)
+showval("Вектор перестановок p:", Alu.p)
+showval("Множитель L:", Alu.L)
+showval("Множитель U:", Alu.U)
+showval("Решение через LU:", Alu \ b)
+println("||(A\\b) - (Alu\\b)|| = ", norm((A \ b) - (Alu \ b)))
+println("det(A) = ", det(A), ", det(Alu) = ", det(Alu))
+
+Aqr = qr(A)
+showval("QR-разложение:", Aqr)
+showval("Множитель Q:", Aqr.Q)
+showval("Множитель R:", Aqr.R)
+showval("Q'Q (должна быть единичной):", Matrix(Aqr.Q' * Aqr.Q))
+
+Asym = A + A'
+AsymEig = eigen(Asym)
+showval("Собственные значения:", AsymEig.values)
+showval("Собственные векторы:", AsymEig.vectors)
+println("||inv(F) * Asym - I|| = ", norm(inv(AsymEig) * Asym - I(3)))
+
+n = 1000
+A = randn(n, n)
+Asym = A + A'
+println("issymmetric(Asym) = ", issymmetric(Asym))
+
+Asym_noisy = copy(Asym)
+Asym_noisy[1, 2] += 5eps()
+println("issymmetric(Asym_noisy) = ", issymmetric(Asym_noisy))
+
+Asym_explicit = Symmetric(Asym_noisy)
+println("Собственные значения, симметричная матрица:")
+@btime eigvals($Asym) samples=2 evals=1;
+println("Собственные значения, зашумлённая матрица:")
+@btime eigvals($Asym_noisy) samples=2 evals=1;
+println("Собственные значения, явный тип Symmetric:")
+@btime eigvals($Asym_explicit) samples=2 evals=1;
+
+n = 1_000_000
+A = SymTridiagonal(randn(n), randn(n - 1))
+println("Память SymTridiagonal 10^6: ", Base.summarysize(A), " байт")
+println("Наибольшее собственное значение:")
+λmax = @btime eigmax($A) samples=2 evals=1
+println("eigmax = ", λmax)
+
+n_demo = 2000
+A_demo = SymTridiagonal(randn(n_demo), randn(n_demo - 1))
+B_demo = Matrix(A_demo)
+println("Память SymTridiagonal n=2000: ", Base.summarysize(A_demo), " байт")
+println("Память плотной копии n=2000: ", Base.summarysize(B_demo), " байт")
+
+Arational = Matrix{Rational{BigInt}}(rand(1:10, 3, 3)) / 10
+x = fill(1, 3)
+b = Arational * x
+showval("Рациональная матрица:", Arational)
+showval("Правая часть b:", b)
+showval("Решение Arational\\b:", Arational \ b)
+showval("LU над рациональными числами:", lu(Arational))
+
+v = [2, 4, -5]
+dot_v = dot(v, v)
+outer_v = v * v'
+showval("v:", v)
+showval("dot_v:", dot_v)
+showval("outer_v:", outer_v)
+
+function analyze_slau(title, A, b)
+    println("=== $title ===")
+    Af = float.(Matrix(A))
+    bf = float.(vec(b))
+    rA = rank(Af)
+    rAb = rank(hcat(Af, bf))
+    n = size(Af, 2)
+    println("rank(A) = $rA, rank([A b]) = $rAb, неизвестных = $n")
+    if rA < rAb
+        x = pinv(Af) * bf
+        println("Система несовместна, решений нет.")
+        println("Псевдорешение МНК: ", x)
+        println("Невязка ||Ax - b|| = ", norm(Af * x - bf))
+    elseif rA == n
+        x = Af \ bf
+        println("Единственное решение: ", x)
+        println("Проверка Ax = ", Af * x)
+    else
+        x = pinv(Af) * bf
+        N = nullspace(Af)
+        println("Бесконечно много решений, свобода = $(n - rA).")
+        println("Нормальное частное решение x0 = ", x)
+        println("Базис ядра:")
+        show(stdout, MIME"text/plain"(), N)
+        println()
+        println("Проверка Ax0 = ", Af * x)
+    end
+    println()
+end
+
+analyze_slau("2a) x + y = 2, x - y = 3", [1 1; 1 -1], [2, 3])
+analyze_slau("2b) x + y = 2, 2x + 2y = 4", [1 1; 2 2], [2, 4])
+analyze_slau("2c) x + y = 2, 2x + 2y = 5", [1 1; 2 2], [2, 5])
+analyze_slau("2d) три одинаковых уравнения x + y = 1", [1 1; 2 2; 3 3], [1, 2, 3])
+analyze_slau("2e) x + y = 2, 2x + y = 1, x - y = 3", [1 1; 2 1; 1 -1], [2, 1, 3])
+analyze_slau("2f) x + y = 2, 2x + y = 1, 3x + 2y = 3", [1 1; 2 1; 3 2], [2, 1, 3])
+
+analyze_slau("3a) два уравнения, три неизвестных", [1 1 1; 1 -1 -2], [2, 3])
+analyze_slau("3b) x+y+z=2, 2x+2y-3z=4, 3x+y+z=1", [1 1 1; 2 2 -3; 3 1 1], [2, 4, 1])
+analyze_slau("3c) x+y+z=1, x+y+2z=0, 2x+2y+3z=1", [1 1 1; 1 1 2; 2 2 3], [1, 0, 1])
+analyze_slau("3d) x+y+z=1, x+y+2z=0, 2x+2y+3z=0", [1 1 1; 1 1 2; 2 2 3], [1, 0, 0])
+
+function to_diagonal(title, A)
+    println("=== $title ===")
+    Af = float.(Matrix(A))
+    F = eigen(Symmetric(Af))
+    D = Diagonal(F.values)
+    P = F.vectors
+    println("Собственные значения: ", F.values)
+    println("Диагональная матрица D:")
+    show(stdout, MIME"text/plain"(), D)
+    println()
+    println("||P*D*P' - A|| = ", norm(P * Matrix(D) * P' - Af))
+    println()
+end
+
+to_diagonal("a) [1 -2; -2 1]", [1 -2; -2 1])
+to_diagonal("b) [1 -2; -2 3]", [1 -2; -2 3])
+to_diagonal("c) матрица 3×3", [1 -2 0; -2 1 2; 0 2 0])
+
+Ma = [1 -2; -2 1]
+showval("a) M^10:", Ma^10)
+
+Mb = [5.0 -2.0; -2.0 5.0]
+Sb = sqrt(Mb)
+showval("b) sqrt(M):", Sb)
+println("||sqrt(M)^2 - M|| = ", norm(Sb^2 - Mb))
+
+Mc = [1.0 -2.0; -2.0 1.0]
+Fc = eigen(Symmetric(Mc))
+Sc = Fc.vectors * Diagonal(cbrt.(Fc.values)) * Fc.vectors'
+showval("c) вещественный кубический корень:", Sc)
+println("||S^3 - M|| = ", norm(Sc^3 - Mc))
+showval("Главная ветвь M^(1/3):", Mc^(1 / 3))
+
+Md = [1.0 2.0; 2.0 3.0]
+showval("d) собственные значения:", eigvals(Symmetric(Md)))
+showval("d) главный квадратный корень (комплексный):", sqrt(Md))
+
+A_task = [
+    140 97 74 168 131
+    97 106 89 131 36
+    74 89 152 144 71
+    168 131 144 54 142
+    131 36 71 142 36
+]
+λ = eigvals(A_task)
+Dλ = Diagonal(λ)
+L = LowerTriangular(A_task)
+showval("Собственные значения A:", λ)
+showval("Диагональная матрица из собственных значений:", Dλ)
+showval("Нижняя треугольная матрица:", L)
+
+println("Время eigvals:")
+@btime eigvals($A_task);
+println("Время Diagonal(eigvals):")
+@btime Diagonal(eigvals($A_task));
+println("Время LowerTriangular (обёртка):")
+@btime LowerTriangular($A_task);
+println("Время tril (копия):")
+@btime tril($A_task);
+
+function report_definition(title, A)
+    println("=== $title ===")
+    A = float.(Matrix(A))
+    n = size(A, 1)
+    E = Matrix{Float64}(I, n, n)
+    M = E - A
+    if rank(M) < n
+        println("E - A вырождена: система разрешима не при любой y. Не продуктивна.")
+        println()
+        return
+    end
+    productive = true
+    for i in 1:n
+        y = zeros(n)
+        y[i] = 1.0
+        x = M \ y
+        println("y = e$i → x = ", x)
+        if any(x .< -1e-8)
+            productive = false
+        end
+    end
+    y = ones(n)
+    println("y = 1 → x = ", M \ y)
+    println(productive ? "По определению: продуктивна." : "По определению: не продуктивна.")
+    println()
+end
+
+function report_inverse(title, A)
+    println("=== $title ===")
+    A = float.(Matrix(A))
+    n = size(A, 1)
+    B = inv(Matrix{Float64}(I, n, n) - A)
+    showval("(E - A)^{-1}:", B)
+    productive = minimum(B) >= -1e-8
+    println(productive ? "По критерию обратной матрицы: продуктивна." : "По критерию обратной матрицы: не продуктивна.")
+    println()
+end
+
+function report_spectral(title, A)
+    println("=== $title ===")
+    A = float.(Matrix(A))
+    ev = eigvals(A)
+    rho = maximum(abs.(ev))
+    println("Собственные значения: ", ev)
+    println("Спектральный радиус: ", rho)
+    println(rho < 1 ? "По спектральному критерию: продуктивна." : "По спектральному критерию: не продуктивна.")
+    println()
+end
+
+report_definition("1a) [1 2; 3 4]", [1 2; 3 4])
+report_definition("1b) (1/2)[1 2; 3 4]", [1 2; 3 4] / 2)
+report_definition("1c) (1/10)[1 2; 3 4]", [1 2; 3 4] / 10)
+
+report_inverse("2a) [1 2; 3 1]", [1 2; 3 1])
+report_inverse("2b) (1/2)[1 2; 3 1]", [1 2; 3 1] / 2)
+report_inverse("2c) (1/10)[1 2; 3 1]", [1 2; 3 1] / 10)
+
+report_spectral("3a) [1 2; 3 1]", [1 2; 3 1])
+report_spectral("3b) (1/2)[1 2; 3 1]", [1 2; 3 1] / 2)
+report_spectral("3c) (1/10)[1 2; 3 1]", [1 2; 3 1] / 10)
+report_spectral("3d) матрица 3×3", [0.1 0.2 0.3; 0.0 0.1 0.2; 0.0 0.1 0.3])

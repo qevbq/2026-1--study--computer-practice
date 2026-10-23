@@ -1,4 +1,1 @@
-/.quarto/
-/_output/
-
-**/*.quarto_ipynb
+/# Сборка презентации (_output, .quarto, *.quarto_ipynb) хранится в git.
