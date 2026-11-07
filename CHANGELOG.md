@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0](https://github.com/qevbq/2026-1--study--computer-practice/compare/v4.0.0...v5.0.0) (2026-11-07)
+
+
+### Features
+
+* **lab05:** done ([ce22f87](https://github.com/qevbq/2026-1--study--computer-practice/commit/ce22f871b85216fe792f47d964a659339e4f2a01))
+
 ## [4.0.0](https://github.com/qevbq/2026-1--study--computer-practice/compare/v3.0.0...v4.0.0) (2026-10-23)
 
 
